@@ -18,8 +18,8 @@ main = do
 
 problemIDs :: Map [Char] (Text -> Text)
 problemIDs =
-  DMS.fromList [ ( "ini", show . ini . toS )
-               , ( "fibo", show . fibo . fromMaybe 0 . Proto.head . parseInts . DT.lines)
+  DMS.fromList [ ( "ini", show . ini . toS)
+               , ( "fibo", show . fibo . fiboParse)
                , ( "deg", show . degLex . deg . degParse)
                , ( "fibd", show . fibdLex . fibd . fibdParse)
                ]

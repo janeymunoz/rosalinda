@@ -40,6 +40,9 @@ fibo nth
 fibs = 0 : 1 : Proto.zipWith (+) fibs (Prelude.tail fibs)
 fibsSol n = fibs !! n
 
+fiboParse :: Text -> Int
+fiboParse = fromMaybe 0 . Proto.head . parseInts . DT.lines
+
 --------------------------------------------------------------------------------
 -- Degree Array (deg)
 --------------------------------------------------------------------------------
