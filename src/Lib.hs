@@ -10,38 +10,22 @@ import Data.Text as DT
 -- Introduction to the Bioinformatics Armory (ini)
 --------------------------------------------------------------------------------
 
-newtype A = A Int
+data BasesCount = BasesCount Int Int Int Int
   deriving (Show)
-newtype T = T Int
-  deriving (Show)
-newtype G = G Int
-  deriving (Show)
-newtype C = C Int
-  deriving (Show)
-
-data BasesCount =
-  BasesCount { a :: A
-             , c :: C
-             , g :: G
-             , t :: T
-             }
-             deriving (Show)
 
 bases0 :: BasesCount
-bases0 = BasesCount {a = A 0, c = C 0, g = G 0, t = T 0}
+bases0 = BasesCount 0 0 0 0
 
 ini :: [Char] -> BasesCount
 ini t = Proto.foldr accum bases0 t
-    where accum :: Char -> BasesCount -> BasesCount
-          accum c bs@(BasesCount {a = A iA, c = C iC, g = G iG, t = T iT }) =
-            case c of
-              'A' -> bs { a = A $ iA + 1 }
-              'C' -> bs { c = C $ iC + 1 } 
-              'G' -> bs { g = G $ iG + 1 } 
-              'T' -> bs { t = T $ iT + 1 }
-              _   -> bs
---type BasesCountMap = Map Char Int
---foldr (\c accum -> insertWith (+) c 1 accum) mempty initialText
+  where accum :: Char -> BasesCount -> BasesCount
+	accum char bs@(BasesCount a c g t) =
+	  case char of
+	    'A' -> BasesCount (a+1) c g t
+	    'C' -> BasesCount a (c+1) g t
+	    'G' -> BasesCount a c (g+1) t
+	    'T' -> BasesCount a c g (t+1)
+	    _   -> bs
 
 --------------------------------------------------------------------------------
 -- Fibonacci Numbers (fibo)
@@ -93,15 +77,7 @@ degLex m = unwords . Proto.map toS $ Proto.foldr accum mempty $ DMS.toAscList m
 --------------------------------------------------------------------------------
 
 type Age = Int
-type Maturity = Int
--- 1 month
-type Lifespan = Int
--- 'm' months
-type Months = Int
--- 'n'
-
-data RabbitPair = RabbitPair Lifespan Maturity Age
-  deriving (Show)
+newtype RabbitPair = RabbitPair Age
 
 -- Input of form "Int Int"
 -- ex: "6 3" ("n, m")
@@ -109,17 +85,30 @@ fibdParse :: Text -> (Int, Int)
 fibdParse t = (listInts !! 0, listInts !! 1)
   where listInts = parseInts . Proto.concatMap DT.words $ DT.lines t
 
-fibd' :: (Months, Lifespan) -> Int
+-- Prohibitively slow version
+fibd' :: (Int, Int) -> Int
 fibd' (months, lifespan) =
   Proto.length $
-    Proto.foldr accum 
-      [RabbitPair lifespan 1 0]
+    Proto.foldr accum
+      [RabbitPair 0]
       [1 .. (months-1)]
   where accum :: Int -> [RabbitPair] -> [RabbitPair]
         accum _ rps = fst ls <> (catMaybes $ snd ls)
-          where ls = unzip $ Proto.map incrRabbit rps
+          where ls = unzip $ Proto.map (incrRabbit lifespan) rps
+		incrRabbit :: Int
+                           -> RabbitPair
+			   -> (RabbitPair, Maybe RabbitPair)
+		incrRabbit lifespan (RabbitPair age)
+		  | age == (lifespan-1) = (rabbitNew, Nothing)
+		  | age >= maturity = (rabbitExist, Just rabbitNew)
+		  | otherwise = (rabbitExist, Nothing)
+		  where incrAge = age + 1
+			rabbitExist = RabbitPair incrAge
+			rabbitNew = RabbitPair 0
+			maturity = 1
 
-fibd :: (Months, Lifespan) -> Integer
+-- Fast version!
+fibd :: (Int, Int) -> Integer
 fibd (months, lifespan) = 
     sum $ Proto.foldl' accum initLiveRabbits [1.. (months -1)]
   where
@@ -134,21 +123,27 @@ fibd (months, lifespan) =
         numNewRabbits = sum reproRabbits
         newRabbits = shiftRabbits numNewRabbits liveRabbits
 
-type RabbitExist = RabbitPair
-type RabbitNew = RabbitPair
-incrRabbit :: RabbitPair -> (RabbitExist, Maybe RabbitNew)
-incrRabbit (RabbitPair lifespan maturity age)
-  | age == (lifespan-1) = (rabbitNew, Nothing)
-  | age >= maturity = (rabbitExist, Just rabbitNew)
-  | otherwise = (rabbitExist, Nothing)
-  where incrAge = age + 1
-        rabbitExist = RabbitPair lifespan maturity incrAge
-        rabbitNew = RabbitPair lifespan maturity 0
 
 -- Output of form "Int"
 -- ex: "4"
 fibdLex :: Integer -> Text
 fibdLex = DT.pack . show
+
+--------------------------------------------------------------------------------
+-- Genome Assembly as Shortest Superstring (long)
+--------------------------------------------------------------------------------
+
+data Base = A | C | G | T
+  deriving (Eq, Show)
+
+longParse :: Text -> Set ([Char], [Base])
+longParse = undefined
+
+long :: Set ([Char], [Base]) -> [Base]
+long = undefined
+
+longLex :: [Base] -> Text
+longLex = undefined
 
 --------------------------------------------------------------------------------
 -- General helper functions
