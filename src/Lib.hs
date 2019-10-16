@@ -1,7 +1,7 @@
 module Lib where
 
 import Protolude as Proto
-import Prelude (tail, (!!))
+import Prelude (tail, (!!), init)
 import Data.Map.Strict as DMS
 import Data.Set as DS
 import Data.Text as DT
@@ -94,31 +94,60 @@ degLex m = unwords . Proto.map toS $ Proto.foldr accum mempty $ DMS.toAscList m
 
 type Age = Int
 type Maturity = Int
+-- 1 month
 type Lifespan = Int
+-- 'm' months
+type Months = Int
+-- 'n'
 
 data RabbitPair = RabbitPair Lifespan Maturity Age
+  deriving (Show)
 
 -- Input of form "Int Int"
--- ex: "6 3"
+-- ex: "6 3" ("n, m")
 fibdParse :: Text -> (Int, Int)
 fibdParse t = (listInts !! 0, listInts !! 1)
   where listInts = parseInts . Proto.concatMap DT.words $ DT.lines t
 
-fibd :: (Int, Int) -> Int
-fibd = undefined
+fibd' :: (Months, Lifespan) -> Int
+fibd' (months, lifespan) =
+  Proto.length $
+    Proto.foldr accum 
+      [RabbitPair lifespan 1 0]
+      [1 .. (months-1)]
+  where accum :: Int -> [RabbitPair] -> [RabbitPair]
+        accum _ rps = fst ls <> (catMaybes $ snd ls)
+          where ls = unzip $ Proto.map incrRabbit rps
 
-incrRabbit :: RabbitPair -> Maybe (RabbitPair, Maybe RabbitPair)
-incrRabbit (RabbitPair lifespan maturity age) =
-  | age > lifespan = Nothing
-  | age >= maturity = Just ((RabbitPair lifespan maturity incrAge),
-                           ,Just RabbitPair lifespan maturity 0)
-			   )
-  | otherwise = Just (RabbitPair lifespan maturity incrAge, False)
-  incrAge = age + 1
+fibd :: (Months, Lifespan) -> Integer
+fibd (months, lifespan) = 
+    sum $ Proto.foldl' accum initLiveRabbits [1.. (months -1)]
+  where
+    initLiveRabbits = 1 : Proto.replicate (lifespan - 1) 0
+
+    shiftRabbits gen rabbits = gen : Prelude.init rabbits
+
+    accum :: [Integer] -> Int -> [Integer]
+    accum liveRabbits _ = newRabbits
+      where
+        reproRabbits = Prelude.tail liveRabbits
+        numNewRabbits = sum reproRabbits
+        newRabbits = shiftRabbits numNewRabbits liveRabbits
+
+type RabbitExist = RabbitPair
+type RabbitNew = RabbitPair
+incrRabbit :: RabbitPair -> (RabbitExist, Maybe RabbitNew)
+incrRabbit (RabbitPair lifespan maturity age)
+  | age == (lifespan-1) = (rabbitNew, Nothing)
+  | age >= maturity = (rabbitExist, Just rabbitNew)
+  | otherwise = (rabbitExist, Nothing)
+  where incrAge = age + 1
+        rabbitExist = RabbitPair lifespan maturity incrAge
+        rabbitNew = RabbitPair lifespan maturity 0
 
 -- Output of form "Int"
 -- ex: "4"
-fibdLex :: Int -> Text
+fibdLex :: Integer -> Text
 fibdLex = DT.pack . show
 
 --------------------------------------------------------------------------------
