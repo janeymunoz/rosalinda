@@ -21,6 +21,7 @@ problemIDs =
   DMS.fromList [ ( "ini", show . ini . toS )
                , ( "fibo", show . fibo . fromMaybe 0 . Proto.head . parseInts . DT.lines)
                , ( "deg", show . degLex . deg . degParse)
+	       , ( "fibd", show . fibdLex . fibd . fibdParse)
                ]
 
 fp :: [Char] -> FilePath

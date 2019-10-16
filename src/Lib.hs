@@ -89,6 +89,39 @@ degLex m = unwords . Proto.map toS $ Proto.foldr accum mempty $ DMS.toAscList m
         accum (_, d) cs = show d : cs
 
 --------------------------------------------------------------------------------
+-- Mortal Fibonacci Rabbits (fibd)
+--------------------------------------------------------------------------------
+
+type Age = Int
+type Maturity = Int
+type Lifespan = Int
+
+data RabbitPair = RabbitPair Lifespan Maturity Age
+
+-- Input of form "Int Int"
+-- ex: "6 3"
+fibdParse :: Text -> (Int, Int)
+fibdParse t = (listInts !! 0, listInts !! 1)
+  where listInts = parseInts . Proto.concatMap DT.words $ DT.lines t
+
+fibd :: (Int, Int) -> Int
+fibd = undefined
+
+incrRabbit :: RabbitPair -> Maybe (RabbitPair, Maybe RabbitPair)
+incrRabbit (RabbitPair lifespan maturity age) =
+  | age > lifespan = Nothing
+  | age >= maturity = Just ((RabbitPair lifespan maturity incrAge),
+                           ,Just RabbitPair lifespan maturity 0)
+			   )
+  | otherwise = Just (RabbitPair lifespan maturity incrAge, False)
+  incrAge = age + 1
+
+-- Output of form "Int"
+-- ex: "4"
+fibdLex :: Int -> Text
+fibdLex = DT.pack . show
+
+--------------------------------------------------------------------------------
 -- General helper functions
 --------------------------------------------------------------------------------
 
