@@ -140,7 +140,7 @@ data Base = A | C | G | T
   deriving (Eq, Show)
 
 longParse :: Text -> Set ([Char], [Base])
-longParse = undefined
+longParse = parseFASTA
 
 long :: Set ([Char], [Base]) -> [Base]
 long = undefined
@@ -158,3 +158,5 @@ parseInts = Proto.mapMaybe parseInt
 parseInt :: Text -> Maybe Int
 parseInt = readMaybe . DT.unpack
 
+parseFASTA :: Text -> Set ([Char], [Base])
+parseFASTA = undefined --Proto.foldr accum DS.empty . DT.lines
