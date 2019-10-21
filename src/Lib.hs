@@ -1,10 +1,10 @@
 module Lib where
 
-import Protolude as Proto
+import Protolude
 import Prelude (tail, (!!), init)
-import Data.Map.Strict as DMS
-import Data.Set as DS
-import Data.Text as DT
+import qualified Data.Map.Strict as DMS
+import qualified Data.Set as DS
+import qualified Data.Text as DT
 
 --------------------------------------------------------------------------------
 -- Introduction to the Bioinformatics Armory (ini)
@@ -17,15 +17,15 @@ bases0 :: BasesCount
 bases0 = BasesCount 0 0 0 0
 
 ini :: [Char] -> BasesCount
-ini t = Proto.foldr accum bases0 t
+ini t = foldr accum bases0 t
   where accum :: Char -> BasesCount -> BasesCount
-	accum char bs@(BasesCount a c g t) =
-	  case char of
-	    'A' -> BasesCount (a+1) c g t
-	    'C' -> BasesCount a (c+1) g t
-	    'G' -> BasesCount a c (g+1) t
-	    'T' -> BasesCount a c g (t+1)
-	    _   -> bs
+        accum char bs@(BasesCount a c g t) =
+          case char of
+            'A' -> BasesCount (a+1) c g t
+            'C' -> BasesCount a (c+1) g t
+            'G' -> BasesCount a c (g+1) t
+            'T' -> BasesCount a c g (t+1)
+            _   -> bs
 
 --------------------------------------------------------------------------------
 -- Fibonacci Numbers (fibo)
@@ -37,18 +37,18 @@ fibo nth
   | nth == 1 = 1
   | otherwise = (fibo (nth-1)) + (fibo (nth-2))
 
-fibs = 0 : 1 : Proto.zipWith (+) fibs (Prelude.tail fibs)
+fibs = 0 : 1 : zipWith (+) fibs (Prelude.tail fibs)
 fibsSol n = fibs !! n
 
 fiboParse :: Text -> Int
-fiboParse = fromMaybe 0 . Proto.head . parseInts . DT.lines
+fiboParse = fromMaybe 0 . head . parseInts . DT.lines
 
 --------------------------------------------------------------------------------
 -- Degree Array (deg)
 --------------------------------------------------------------------------------
 
 deg :: [(Int,Int)] -> Map Int Int
-deg edgesAll = snd $ Proto.foldr accum (mempty, mempty) edgesAll
+deg edgesAll = snd $ foldr accum (mempty, mempty) edgesAll
   where accum :: (Int,Int)
               -> (Set (Set Int), Map Int Int)
               -> (Set (Set Int), Map Int Int)
@@ -62,16 +62,16 @@ deg edgesAll = snd $ Proto.foldr accum (mempty, mempty) edgesAll
           where es = DS.fromList [v1, v2]
 
 degParse :: Text -> [(Int, Int)]
-degParse t = Proto.map (Proto.bimap (fromMaybe 0 . parseInt)
+degParse t = map (bimap (fromMaybe 0 . parseInt)
                                     (fromMaybe 0 . parseInt))
-                      $ Proto.map (DT.breakOn space) . Prelude.tail $ DT.lines t
+                      $ map (DT.breakOn space) . Prelude.tail $ DT.lines t
   where space :: Text
         space = DT.pack " "
 
 -- Output should be of form "v1EdgeCount v2EdgeCount v3EdgeCount"
 -- ex: "20 23 42 32"
 degLex :: Map Int Int -> Text
-degLex m = unwords . Proto.map toS $ Proto.foldr accum mempty $ DMS.toAscList m
+degLex m = DT.unwords . map toS $ foldr accum mempty $ DMS.toAscList m
   where accum :: (Int, Int) -> [[Char]] -> [[Char]]
         accum (_, d) cs = show d : cs
 
@@ -86,18 +86,18 @@ newtype RabbitPair = RabbitPair Age
 -- ex: "6 3" ("n, m")
 fibdParse :: Text -> (Int, Int)
 fibdParse t = (listInts !! 0, listInts !! 1)
-  where listInts = parseInts . Proto.concatMap DT.words $ DT.lines t
+  where listInts = parseInts . concatMap DT.words $ DT.lines t
 
 -- Prohibitively slow version
 fibd' :: (Int, Int) -> Int
 fibd' (months, lifespan) =
-  Proto.length $
-    Proto.foldr accum
+  length $
+    foldr accum
       [RabbitPair 0]
       [1 .. (months-1)]
   where accum :: Int -> [RabbitPair] -> [RabbitPair]
         accum _ rps = fst ls <> (catMaybes $ snd ls)
-          where ls = unzip $ Proto.map (incrRabbit lifespan) rps
+          where ls = unzip $ map (incrRabbit lifespan) rps
 		incrRabbit :: Int
                            -> RabbitPair
 			   -> (RabbitPair, Maybe RabbitPair)
@@ -113,9 +113,9 @@ fibd' (months, lifespan) =
 -- Fast version!
 fibd :: (Int, Int) -> Integer
 fibd (months, lifespan) = 
-    sum $ Proto.foldl' accum initLiveRabbits [1.. (months -1)]
+    sum $ foldl' accum initLiveRabbits [1.. (months -1)]
   where
-    initLiveRabbits = 1 : Proto.replicate (lifespan - 1) 0
+    initLiveRabbits = 1 : replicate (lifespan - 1) 0
 
     shiftRabbits gen rabbits = gen : Prelude.init rabbits
 
@@ -137,26 +137,94 @@ fibdLex = DT.pack . show
 --------------------------------------------------------------------------------
 
 data Base = A | C | G | T
-  deriving (Eq, Show)
+  deriving (Eq, Ord, Show)
 
-longParse :: Text -> Set ([Char], [Base])
+longParse :: Text -> Set (FASTAID, [Base])
 longParse = parseFASTA
 
-long :: Set ([Char], [Base]) -> [Base]
+long :: Set (FASTAID, [Base]) -> [Base]
 long = undefined
+  where overlaps :: [Base] -> [Base] -> Maybe [Base]
+        overlaps s1 s2 = undefined
+          where lenS1 = length s1
+                half = (+) 1 $ div lenS1 2
+
 
 longLex :: [Base] -> Text
-longLex = undefined
+longLex = basesToText
 
 --------------------------------------------------------------------------------
 -- General helper functions
 --------------------------------------------------------------------------------
 
 parseInts :: [Text] -> [Int]
-parseInts = Proto.mapMaybe parseInt
+parseInts = mapMaybe parseInt
 
 parseInt :: Text -> Maybe Int
 parseInt = readMaybe . DT.unpack
 
-parseFASTA :: Text -> Set ([Char], [Base])
-parseFASTA = undefined --Proto.foldr accum DS.empty . DT.lines
+newtype FASTAID = FASTAID Text
+  deriving (Eq, Ord, Show)
+
+-- Given input Text of style
+--   >FASTA_ID_X
+--   >AA
+--   >GGG
+--   >FASTAID_Y
+--   >TTT
+--   >UUU
+-- Will output a Set of Tuples, each tuple containing a FASTA ID associated
+-- with a list of Bases.
+--   fromList [(FASTAID "FASTA_ID_X", [A,A,G,G,G]), (FASTAID "FASTA_ID_Y",
+--   [T,T,T,U,U,U])]
+-- TODO: parts of the list handling would be faster if done in reverse
+parseFASTA :: Text -> Set (FASTAID, [Base])
+parseFASTA t = fourth $
+                 foldl accum (length ts, FASTAID DT.empty, [], mempty) ts
+  where ts = DT.lines t
+        fourth (a, b, c, d) = d
+        accum :: (Int, FASTAID, [Base], Set (FASTAID, [Base]))
+              -> Text
+              -> (Int, FASTAID, [Base], Set (FASTAID, [Base]))
+        accum (lineID, fid@(FASTAID f), bs, s) t =
+          case DT.uncons t of
+            Just ('>', fidNew) ->
+              if f == DT.empty
+                 then (newLine, FASTAID fidNew, [], s)
+                 else (newLine, FASTAID fidNew, [], DS.insert (fid, bs) s)
+            Just _             ->
+              if lineID > 1
+                 then (newLine, fid, addOnBases, s)
+                 else (newLine, fid, [], DS.insert (fid, addOnBases) s)
+            Nothing            -> (newLine, fid, bs, s)
+          where newLine = lineID - 1
+                addOnBases = bs <> (DT.foldl charsToBases [] t)
+
+
+charsToBases :: [Base] -> Char -> [Base]
+charsToBases bs c =
+  bs <> (mapMaybe charToBase [c])
+
+charToBase :: Char -> Maybe Base
+charToBase c =
+  case c of
+    'A' -> Just A
+    'a' -> Just A
+    'C' -> Just C
+    'c' -> Just C
+    'G' -> Just G
+    'g' -> Just G
+    'T' -> Just T
+    't' -> Just T
+    _   -> Nothing
+
+basesToText :: [Base] -> Text
+basesToText bs = DT.pack $ map baseToChar bs
+
+baseToChar :: Base -> Char
+baseToChar b =
+  case b of
+    A -> 'A'
+    C -> 'C'
+    G -> 'G'
+    T -> 'T'

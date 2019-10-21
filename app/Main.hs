@@ -6,6 +6,7 @@ import System.FilePath as FP
 import System.Environment as SE
 import Data.Map.Strict as DMS
 import Data.Text as DT
+import Data.Set as DS
 
 main :: IO ()
 main = do
@@ -22,6 +23,7 @@ problemIDs =
                , ( "fibo", show . fibo . fiboParse)
                , ( "deg", show . degLex . deg . degParse)
                , ( "fibd", show . fibdLex . fibd . fibdParse)
+               , ( "long", show . longLex . long . longParse)
                ]
 
 fp :: [Char] -> FilePath
